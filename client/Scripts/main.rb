@@ -1,6 +1,7 @@
 require 'socket'
 
 tcp_socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+tcp_socket.setsockopt(Socket::IPPROTO_TCP, Socket::TCP_NODELAY, true)
 sockaddr_server = Socket.sockaddr_in(9000, '127.0.0.1')
 
 begin
@@ -32,7 +33,10 @@ loop do
     begin
         tcp_socket.write_nonblock("Hello from client #{$count}")
     rescue IO::WaitReadable => e # the socket is marked as nonblocking and the connection cannot be completed immediately
-        p "!"
+        print("WaitReadable")
+    rescue Errno::ECONNRESET => e
+        print(e.inspect)
+        break
     end
     sleep 1
     $count += 1
