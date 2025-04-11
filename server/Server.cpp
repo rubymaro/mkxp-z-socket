@@ -14,6 +14,7 @@ int FinalizeServer(void);
 #define LISTEN_SOCKET_TCPPORT (9000)
 #define MAX_BACKLOG (65535)
 #define RECV_SIZE (1024)
+#define SEND_SIZE (1024)
 
 SOCKET ghListenSocket;
 int gTCPNoDelay = 1;
@@ -36,10 +37,13 @@ int Run(void)
 	int addrLength;
 	int retNoDelay;
 	int retRecv;
-	char* paBuf;
+	int retSend;
+	char* paRecvBuf;
+	char* paSendBuf;
 
 	addrLength = sizeof(clientAddrInet);
-	paBuf = nullptr;
+	paRecvBuf = nullptr;
+	paSendBuf = nullptr;
 
 	for (;;)
 	{
@@ -66,15 +70,20 @@ int Run(void)
 				}
 			}
 
-			paBuf = (char*)malloc(RECV_SIZE);
-			if (paBuf == nullptr)
+			paRecvBuf = (char*)malloc(RECV_SIZE);
+			paSendBuf = (char*)malloc(SEND_SIZE);
+			if (paRecvBuf == nullptr)
+			{
+				break;
+			}
+			if (paSendBuf == nullptr)
 			{
 				break;
 			}
 
 			for (;;)
 			{
-				retRecv = recv(clientSocket, paBuf, RECV_SIZE, 0);
+				retRecv = recv(clientSocket, paRecvBuf, RECV_SIZE, 0);
 				if (retRecv == SOCKET_ERROR)
 				{
 					if (WSAGetLastError() != WSAEWOULDBLOCK)
@@ -84,17 +93,42 @@ int Run(void)
 						break;
 					}
 				}
+				else if (retRecv == 0)
+				{
+					break;
+				}
 				else
 				{
-					paBuf = paBuf;
+					wprintf(L"Recv(%d): ", retRecv);
+					fwrite(paRecvBuf, 1, retRecv, stdout);
+					wprintf(L"\n");
+
+					memcpy(paSendBuf, paRecvBuf, retRecv);
+					retSend = send(clientSocket, paSendBuf, retRecv, 0);
+
+					if (retSend == SOCKET_ERROR)
+					{
+						if (WSAGetLastError() != WSAEWOULDBLOCK)
+						{
+							fwprintf(stderr, L"[%s:%5u] send() WSAGetLastError: %d\t%s:L#%d\n",
+								TEXT(__FUNCTION__), GetCurrentThreadId(), WSAGetLastError(), TEXT(__FILE__), __LINE__);
+							break;
+						}
+					}
+					else
+					{
+						wprintf(L"\tSend(%d): ", retSend);
+						fwrite(paSendBuf, 1, retSend, stdout);
+						wprintf(L"\n");
+					}
 				}
 			}
 		}
 	}
 
-	if (paBuf != nullptr)
+	if (paRecvBuf != nullptr)
 	{
-		free(paBuf);
+		free(paRecvBuf);
 	}
 
 	return 0;
