@@ -1,6 +1,5 @@
 require 'socket'
 
-# Create a new socket
 tcp_socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
 sockaddr_server = Socket.sockaddr_in(9000, '127.0.0.1')
 
@@ -25,6 +24,18 @@ rescue Errno::ECONNREFUSED => e # the target sockaddr was not listening for conn
 #rescue Errno::ETIMEDOUT => e # the attempt to connect timed out before a connection was made.
 #rescue Errno::EWOULDBLOCK => e # the socket is marked as nonblocking and the connection cannot be completed immediately
 #rescue Errno::EACCES => e # the attempt to connect the datagram socket to the broadcast address failed
+end
+
+$count = 0
+
+loop do
+    begin
+        tcp_socket.write_nonblock("Hello from client #{$count}")
+    rescue IO::WaitReadable => e # the socket is marked as nonblocking and the connection cannot be completed immediately
+        p "!"
+    end
+    sleep 1
+    $count += 1
 end
 
 tcp_socket.close
