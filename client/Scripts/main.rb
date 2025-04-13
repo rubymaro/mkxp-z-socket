@@ -2,7 +2,7 @@ require 'socket'
 
 tcp_socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
 tcp_socket.setsockopt(Socket::IPPROTO_TCP, Socket::TCP_NODELAY, true)
-sockaddr_server = Socket.sockaddr_in(9000, '127.0.0.1')
+sockaddr_server = Socket.sockaddr_in(9000, "124.61.178.91")
 
 begin
     tcp_socket.connect(sockaddr_server)
@@ -14,7 +14,7 @@ begin
 #rescue Errno::EADDRNOTAVAIL => e # the remote address is not a valid address, such as ADDR_ANY TODO check ADDRANY TO INADDR_ANY
 #rescue Errno::EAFNOSUPPORT => e # addresses in the specified family cannot be used with with this socket
 rescue Errno::ECONNREFUSED => e # the target sockaddr was not listening for connections refused the connection request
-    print(e.inspect << "\n----\n" << e.backtrace.join("\n"))
+    print(e.inspect << "\n\n" << e.backtrace.join("\n"))
 #rescue Errno::EFAULT => e # the socket's internal address or address length parameter is too small or is not a valid part of the user space address
 #rescue Errno::EINVAL => e # the socket is a listening socket
 #rescue Errno::EISCONN => e # the socket is already connected
