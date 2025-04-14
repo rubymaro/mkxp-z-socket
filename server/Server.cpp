@@ -18,6 +18,8 @@ int FinalizeServer(void);
 
 SOCKET ghListenSocket;
 int gTCPNoDelay = 1;
+FD_SET gReadSet;
+FD_SET gWriteSet;
 
 int wmain(const int argc, const wchar_t* argv[])
 {
@@ -36,6 +38,7 @@ int Run(void)
 	SOCKADDR_IN clientAddrInet;
 	int addrLength;
 	int retNoDelay;
+	int retSelect;
 	int retRecv;
 	int retSend;
 	char* paRecvBuf;
@@ -47,6 +50,29 @@ int Run(void)
 
 	for (;;)
 	{
+		FD_ZERO(&gReadSet);
+		FD_ZERO(&gWriteSet);
+		FD_SET(ghListenSocket, &gReadSet);
+
+		retSelect = select(UNREFERENCED_PARAMETER(0), &gReadSet, &gWriteSet, nullptr, nullptr /* infinite */);
+		if (retSelect == SOCKET_ERROR)
+		{
+			fwprintf(stderr, L"[%s:%5u] select() WSAGetLastError: %d\n%s:L#%d\n\n",
+				TEXT(__FUNCTION__), GetCurrentThreadId(), WSAGetLastError(), TEXT(__FILE__), __LINE__);
+			break;
+		}
+		else if (retSelect == 0)
+		{
+			fwprintf(stderr, L"[%s:%5u] select() Timeout\n%s:L#%d\n\n",
+				TEXT(__FUNCTION__), GetCurrentThreadId(), TEXT(__FILE__), __LINE__);
+			break;
+		}
+
+		if (!FD_ISSET(ghListenSocket, &gReadSet))
+		{
+			continue;
+		}
+
 		clientSocket = accept(ghListenSocket, reinterpret_cast<SOCKADDR*>(&clientAddrInet), &addrLength);
 		if (clientSocket == INVALID_SOCKET)
 		{
@@ -185,7 +211,7 @@ int InitializeServer(void)
 			TEXT(__FUNCTION__), GetCurrentThreadId(), WSAGetLastError(), TEXT(__FILE__), __LINE__);
 		return WSAGetLastError();
 	}
-
+	
 	LINGER optLinger;
 	int retSetSockOptLinger;
 	optLinger.l_onoff = 1;
@@ -197,7 +223,7 @@ int InitializeServer(void)
 			TEXT(__FUNCTION__), GetCurrentThreadId(), WSAGetLastError(), TEXT(__FILE__), __LINE__);
 		return WSAGetLastError();
 	}
-
+	
 	int retBind;
 	retBind = bind(ghListenSocket, reinterpret_cast<SOCKADDR*>(&serverAddrInet), sizeof(serverAddrInet));
 	if (retBind == SOCKET_ERROR)
