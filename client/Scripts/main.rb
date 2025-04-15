@@ -28,6 +28,7 @@ rescue Errno::ECONNREFUSED => e # the target sockaddr was not listening for conn
 end
 
 $count = 0
+$str = String.new("", capacity: 4096)
 
 loop do
     begin
@@ -40,6 +41,14 @@ loop do
         print(e.inspect)
         break
     end
+
+    begin
+        tcp_socket.read_nonblock(4096, $str)
+        print($str)
+    rescue IO::WaitReadable => e # the socket is marked as nonblocking and the connection cannot be completed immediately
+        print("WaitReadable")
+    end
+
     sleep 1
     $count += 1
 end
