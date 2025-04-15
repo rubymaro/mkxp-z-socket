@@ -1,3 +1,4 @@
+#include <clocale>
 #include <cstdio>
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -126,7 +127,7 @@ int Run(void)
 				else
 				{
 					wprintf(L"Recv(%d): ", retRecv);
-					fwrite(paRecvBuf, 1, retRecv, stdout);
+					fwrite(paRecvBuf, sizeof(char), retRecv, stdout);
 					wprintf(L"\n");
 
 					memcpy(paSendBuf, paRecvBuf, retRecv);
@@ -144,7 +145,7 @@ int Run(void)
 					else
 					{
 						wprintf(L"\tSend(%d): ", retSend);
-						fwrite(paSendBuf, 1, retSend, stdout);
+						fwrite(paSendBuf, sizeof(char), retSend, stdout);
 						wprintf(L"\n");
 					}
 				}
@@ -162,6 +163,8 @@ int Run(void)
 
 int InitializeServer(void)
 {
+	_wsetlocale(LC_ALL, L"");
+
 	MMRESULT retTimeBeginPeriod;
 	retTimeBeginPeriod = timeBeginPeriod(TIME_PERIOD_MSEC);
 	if (retTimeBeginPeriod != TIMERR_NOERROR)
