@@ -31,7 +31,9 @@ $count = 0
 
 loop do
     begin
-        tcp_socket.write_nonblock("Hello from client #{$count}")
+        tcp_socket.write_nonblock("안녕 client #{$count}")
+        #tcp_socket.write_nonblock("안녕 client #{$count}".encode("utf-8"))
+        #tcp_socket.write_nonblock("안녕 client #{$count}".encode("utf-16"))
     rescue IO::WaitReadable => e # the socket is marked as nonblocking and the connection cannot be completed immediately
         print("WaitReadable")
     rescue Errno::ECONNRESET => e
